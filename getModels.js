@@ -25,7 +25,7 @@ for (const fileName of require("fs")
   const parsedModel = parseModel(modelData_JSON, {});
   parsedModel._id = mongoose.Schema.Types.ObjectId;
   const schema = mongoose.Schema(parsedModel);
-  const modelName = fileName.toLowerCase().split("model")[0].capitalize()
+  const modelName = fileName.split("Model.js")[0].capitalize()
   const model = mongoose.model(modelName, schema);
   allModels[modelName] = model;
 }
