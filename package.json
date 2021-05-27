@@ -1,0 +1,28 @@
+{
+  "name": "json-mongo-model-parser",
+  "version": "1.0.0",
+  "description": "is this really usefull ?",
+  "main": "parser.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Le-Roux-nard/JsonToMongoModelParser.git"
+  },
+  "author": "Le_Roux-nard",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Le-Roux-nard/JsonToMongoModelParser/issues"
+  },
+  "homepage": "https://github.com/Le-Roux-nard/JsonToMongoModelParser#readme",
+  "keywords": [
+    "mongoose",
+    "mongodb",
+    "json",
+    "parser"
+  ],
+  "dependencies": {
+    "mongoose": "^5.12.11"
+  }
+}
