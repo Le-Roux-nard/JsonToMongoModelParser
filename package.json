@@ -1,10 +1,10 @@
 {
   "name": "json-mongo-model-parser",
-  "version": "1.1.0",
-  "description": "is this really usefull ?",
+  "version": "2.0.0",
+  "description": "Simple package that allows you to parse a JSON file into a MongoDB model",
   "main": "parser.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test" : "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",

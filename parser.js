@@ -1,87 +1,92 @@
-const mongoose = require("mongoose");
-const parseModel = require("./functions");
-const fs = require("fs");
-const PATH = require("path");
-
-String.prototype.capitalize = function () {
-  const indexedString = this.split("");
-  indexedString[0] = indexedString[0].toUpperCase();
-  for (let index = 0; index < indexedString.length; index++) {
-    const char = indexedString[index];
-    if (
-      (char === "." || char === "!" || char === "?") &&
-      indexedString[index + 1] !== undefined
-    ) {
-      indexedString[index + 1] != " "
-        ? (indexedString[index + 1] = indexedString[index + 1].toUpperCase())
-        : (indexedString[index + 2] = indexedString[index + 2].toUpperCase());
-    }
-  }
-  return indexedString.join("");
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
 };
-
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.getModelFromJSON = exports.getModelsFromDirectory = void 0;
+const mongoose_1 = require("mongoose");
+const path_1 = __importDefault(require("path"));
+const fs_1 = __importDefault(require("fs"));
 /**
  * @function
- * parse all models of a directory
- * @param {string} path path : path to file
+ * parse models from all JSON files in a directory
+ * @param {string} path path : relative path to folder
  */
-function getModelsFromDirectory(path) {
-  let allModels = {};
-  try {
-    path = PATH.join(process.cwd() + path);
-    console.log(path)
-    if (fs.readdirSync(path).length < 1) {
-      throw new Error("Path is not valid !");
-    } else {
-      for (const fileName of fs
-        .readdirSync(path)
-        .filter(
-          (fileName) => fileName.endsWith("js") || fileName.endsWith(".json")
-        )) {
-        const modelData_JSON = require(`${
-          path.endsWith("/") || path.endsWith("\\") ? path : `${path}/`
-        }${fileName}`);
-        const parsedModel = parseModel(modelData_JSON, {});
-        parsedModel._id = mongoose.Schema.Types.ObjectId;
-        const schema = mongoose.Schema(parsedModel);
-        const modelName = fileName.split(".")[0].capitalize();
-        const model = mongoose.model(modelName, schema);
-        allModels[modelName] = model;
-      }
-      console.log(allModels)
-      return allModels;
+function getModelsFromDirectory(inputPath) {
+    let allModels = {};
+    const parsedPath = path_1.default.resolve(process.cwd(), inputPath);
+    let directoryFiles = fs_1.default
+        .readdirSync(parsedPath)
+        .filter((fileName) => fileName.endsWith(".json") && !["package.json", "package-lock.json"].includes(fileName));
+    for (const fileName of directoryFiles) {
+        const filePath = path_1.default.resolve(parsedPath, fileName);
+        allModels[fileName.split(".")[0]] = getModelFromJSON(filePath);
     }
-  } catch (error) {
-    throw new Error(error);
-  }
+    return allModels;
 }
-
+exports.getModelsFromDirectory = getModelsFromDirectory;
 /**
  * @function
- * parse model from js/json file
- * @param {string} path path : path to file
+ * parse model from json file
+ * @param {string} path path : relative path to file
  */
-function getModelFromJSON(path) {
-  try {
-    path = PATH.join(process.cwd() + path);
-    const modelData_JSON = require(path);
-    const fileName = path.split(/\/|\\|\./).reverse()[1];
-    const parsedModel = parseModel(modelData_JSON, {});
-    parsedModel._id = mongoose.Schema.Types.ObjectId;
-    const schema = mongoose.Schema(parsedModel);
-    const modelName = fileName.capitalize();
-    const model = mongoose.model(modelName, schema);
-    return model;
-  } catch (error) {
-    throw new Error(error);
-  }
+function getModelFromJSON(filePath) {
+    try {
+        const fileName = path_1.default.basename(filePath);
+        const fileContent = JSON.parse(fs_1.default.readFileSync(filePath, "utf8"));
+        const parsedModel = loopThroughMongoJson(fileContent);
+        const schema = new mongoose_1.Schema(Object.assign({ _id: mongoose_1.Schema.Types.ObjectId }, parsedModel));
+        const modelName = capitalize(fileName.split(".")[0]);
+        return (0, mongoose_1.model)(modelName, schema);
+    }
+    catch (e) {
+        throw new Error(e.message);
+    }
 }
-
-/**
- * A module that shouts hello!
- * @module JsonToMongModelParser
- */
-module.exports = {
-  getModelsFromDirectory,
-  getModelFromJSON,
-};
+exports.getModelFromJSON = getModelFromJSON;
+function loopThroughMongoJson(object, dataToReturn = {}) {
+    for (const key in object) {
+        if (typeof object[key] == "object" && !Array.isArray(object[key])) {
+            dataToReturn[key] = {};
+            loopThroughMongoJson(object[key], dataToReturn[key]);
+        }
+        else {
+            let data = object[key];
+            dataToReturn[key] = {};
+            switch (typeof data) {
+                case "object": {
+                    if (Array.isArray(data)) {
+                        dataToReturn[key].type = Array;
+                    }
+                    else {
+                        dataToReturn[key].type = Object;
+                    }
+                    break;
+                }
+                case "string": {
+                    dataToReturn[key].type = String;
+                    break;
+                }
+                case "number": {
+                    dataToReturn[key].type = Number;
+                    break;
+                }
+                case "boolean": {
+                    dataToReturn[key].type = Boolean;
+                    break;
+                }
+                default: {
+                    dataToReturn[key].type = String;
+                }
+            }
+            dataToReturn[key].require = true;
+            dataToReturn[key].default = data;
+        }
+    }
+    return dataToReturn;
+}
+function capitalize(s) {
+    if (typeof s !== "string")
+        return "";
+    return s.charAt(0).toUpperCase() + s.slice(1);
+}
