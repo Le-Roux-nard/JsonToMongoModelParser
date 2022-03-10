@@ -14,13 +14,13 @@ const fs_1 = __importDefault(require("fs"));
  */
 function getModelsFromDirectory(inputPath) {
     let allModels = {};
-    const parsedPath = path_1.default.resolve(process.cwd(), inputPath);
+    const parsedPath = path_1.default.resolve(process.cwd(), inputPath); //Resolve relative path to absolute path inside project
     let directoryFiles = fs_1.default
-        .readdirSync(parsedPath)
-        .filter((fileName) => fileName.endsWith(".json") && !["package.json", "package-lock.json"].includes(fileName));
+        .readdirSync(parsedPath) //read files in directory
+        .filter((fileName) => fileName.endsWith(".json") && !["package.json", "package-lock.json"].includes(fileName)); //filter json files but exludes package.json and package-lock.json to avoid issues
     for (const fileName of directoryFiles) {
-        const filePath = path_1.default.resolve(parsedPath, fileName);
-        allModels[fileName.split(".")[0]] = getModelFromJSON(filePath);
+        const filePath = path_1.default.resolve(parsedPath, fileName); //resolve file path
+        allModels[fileName.split(".")[0]] = getModelFromJSON(filePath); //get model from json file
     }
     return allModels;
 }
@@ -36,7 +36,7 @@ function getModelFromJSON(filePath) {
         const fileContent = JSON.parse(fs_1.default.readFileSync(filePath, "utf8"));
         const parsedModel = loopThroughMongoJson(fileContent);
         const schema = new mongoose_1.Schema(Object.assign({ _id: mongoose_1.Schema.Types.ObjectId }, parsedModel));
-        const modelName = capitalize(fileName.split(".")[0]);
+        const modelName = capitalize(fileName.split(".")[0]); //capitalize first letter of file name (ex: user.json -> User)
         return (0, mongoose_1.model)(modelName, schema);
     }
     catch (e) {
@@ -47,13 +47,14 @@ exports.getModelFromJSON = getModelFromJSON;
 function loopThroughMongoJson(object, dataToReturn = {}) {
     for (const key in object) {
         if (typeof object[key] == "object" && !Array.isArray(object[key])) {
+            //if value is a JSON object and not an array, lopping through recursively to get properties & default values(ex: { "name": "John", "age": 30, "city": "New York" })
             dataToReturn[key] = {};
             loopThroughMongoJson(object[key], dataToReturn[key]);
         }
         else {
             let data = object[key];
-            dataToReturn[key] = {};
-            switch (typeof data) {
+            dataToReturn[key] = {}; //if value is not a JSON object, create an object to store type and default value
+            switch (typeof data) { //set type of value by checking type of default value
                 case "object": {
                     if (Array.isArray(data)) {
                         dataToReturn[key].type = Array;
@@ -79,7 +80,7 @@ function loopThroughMongoJson(object, dataToReturn = {}) {
                     dataToReturn[key].type = String;
                 }
             }
-            dataToReturn[key].require = true;
+            dataToReturn[key].require = true; //by default all properties are required
             dataToReturn[key].default = data;
         }
     }
